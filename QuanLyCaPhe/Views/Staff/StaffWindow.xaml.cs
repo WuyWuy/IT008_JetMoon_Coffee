@@ -1,4 +1,4 @@
-﻿
+﻿// (Full file content with the small fix applied)
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -747,6 +747,7 @@ namespace QuanLyCaPhe.Views.Staff
                 }
 
                 // Now apply the UI change (table becomes Busy and timer starts)
+                // --- FIX: preserve existing EndTimeUtc when no new hours were added ---
                 if (intendedEndUtc.HasValue)
                 {
                     selectedTable.EndTimeUtc = intendedEndUtc;
@@ -754,8 +755,15 @@ namespace QuanLyCaPhe.Views.Staff
                 }
                 else
                 {
-                    selectedTable.EndTimeUtc = null;
-                    selectedTable.Countdown = 0;
+                    // If we didn't add hours, keep previous EndTimeUtc (if any) and recompute countdown.
+                    if (selectedTable.EndTimeUtc.HasValue)
+                    {
+                        selectedTable.Countdown = (int)Math.Max(0, (selectedTable.EndTimeUtc.Value - DateTime.UtcNow).TotalSeconds);
+                    }
+                    else
+                    {
+                        selectedTable.Countdown = 0;
+                    }
                 }
                 selectedTable.Status = "Busy";
 
@@ -1342,7 +1350,7 @@ namespace QuanLyCaPhe.Views.Staff
             {
                 BorderBrush = (System.Windows.Media.Brush)Application.Current.FindResource("BorderLight"),
                 BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(12), // Bo góc
+                CornerRadius = new CornerRadius(12), 
                 Padding = new Thickness(10),
                 Background = System.Windows.Media.Brushes.White,
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -1411,7 +1419,6 @@ namespace QuanLyCaPhe.Views.Staff
             btnPanel.Children.Add(btnConfirm);
             panel.Children.Add(btnPanel);
 
-            // Logic sự kiện
             bool result = false;
             btnConfirm.Click += (s, e) =>
             {
